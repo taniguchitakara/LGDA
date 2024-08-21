@@ -8,25 +8,145 @@ from collections import OrderedDict
 import mmcv
 import numpy as np
 from mmcv.utils import print_log
+from mmcv import Config, DictAction
 from terminaltables import AsciiTable
 # from pycocotools.coco import COCO
 from mmdet.core import eval_recalls
 from .api_wrappers import COCO, COCOeval
 from .builder import DATASETS
-
+from mmdet.models import build_detector
 from .custom import CustomDataset
-
+from PIL import Image, ImageDraw, ImageFont
 import copy
 import random
+import json
+
+
+import os
+from PIL import Image
+
+import json
+
+def extract_category_ids_above_threshold(dictionary, threshold):
+    result = [key for key, value in dictionary.items() if value >= threshold]
+    return result
+
+def count_category_ids(coco_json_file):
+    with open(coco_json_file, 'r') as f:
+        data = json.load(f)
+
+    category_counts = {}
+
+    for annotation in data['annotations']:
+        category_id = annotation['category_id']
+        if category_id in category_counts:
+            category_counts[category_id] += 1
+        else:
+            category_counts[category_id] = 1
+
+    return category_counts
+"""
+if __name__ == "__main__":
+    coco_json_file = "your_coco_json_file.json"  # あなたのCOCO形式のJSONファイルのパスに置き換えてください
+    counts = count_category_ids(coco_json_file)
+
+    print("category_idの数と登場回数:")
+    for category_id, count in counts.items():
+        print(f"category_id: {category_id}, 登場回数: {count}")
+"""
+
+def crop_image(annotation):
+    #print(annotation)
+    root = "/large/ttani_2/bhrl/data/manga_dataset/images/"
+    image_file = annotation['file_name']
+    image_category = annotation["ann"]["category_id"]
+    image = Image.open(root + image_file)
+
+    ann_data = annotation['ann']
+    bbox = ann_data['bbox']
+    cropped_image = image.crop((bbox[0], bbox[1], bbox[0] + bbox[2], bbox[1] + bbox[3]))
+    
+    output_folder = f"/large/ttani_2/bhrl/data/cropped_manga/{image_file}"
+    
+    os.makedirs(output_folder, exist_ok=True)  # フォルダが存在しない場合に作成する
+    cropped_image.save(f"{output_folder}/{image_category}.jpg")
+"""
+if __name__ == "__main__":
+    json_file = "../crop_face_ref_lovehina14.json"
+    crop_image(json_file)
+"""
+def load_coco_categories(annotation_file_path):
+    with open(annotation_file_path, 'r') as f:
+        data = json.load(f)
+    
+    categories = tuple(category['name'] for category in data['categories'])
+    
+    return categories
+
+def find_indexes(lst, arr):
+    indexes = []
+    for item in lst:
+        if item in arr:
+            indexes.append(arr.index(item))
+    return indexes
+
+def remove_elements(source_list, elements_to_remove):
+    return [item for item in source_list if item not in elements_to_remove]
+
+import matplotlib.pyplot as plt
+from collections import Counter
+
+def plot_histogram_from_dict(dictionary, filename):
+    # 辞書を値で降順にソート
+    sorted_dict = dict(sorted(dictionary.items(), key=lambda item: item[1], reverse=True))
+
+    # ソートされた辞書からキーと値を取り出す
+    keys = range(len(sorted_dict))
+    values = sorted_dict.values()
+
+    # ヒストグラムを作成
+    plt.bar(keys,values)
+    plt.ylabel("Number of appearances")
+    plt.xlabel("Character (sorted by most)")
+
+    # ヒストグラムを画像として保存
+    plt.savefig(filename)
+
+# サンプルの辞書で関数をテスト
 
 
 @DATASETS.register_module()
 class OneShotVOCDataset(CustomDataset):
-
-    CLASSES = ('aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car',
+    """    CLASSES = ('aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car',
                'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse',
                'motorbike', 'person', 'pottedplant', 'sheep', 'sofa', 'train',
-               'tvmonitor')
+               'tvmonitor',)
+"""
+    
+    #config_path = "/large/ttani_2/bhrl/configs/manga/BHRL_salad_colorized.py"
+    #config_path = "/large/ttani_2/bhrl/configs/manga/BHRL_lovehina_colorized.py"
+    #config_path = "/large/ttani_2/bhrl/configs/manga/BHRL_lovehina_mono.py"
+    #config_path = "/large/ttani_2/bhrl/configs/manga/BHRL_salad_mono.py"
+    config_path = "/large/ttani_2/bhrl/configs/manga/BHRL_allpairs_mono.py"
+
+    cfg = mmcv.Config.fromfile(config_path)
+    CLASSES = list(set(load_coco_categories(cfg.data.train.ann_file) +load_coco_categories(cfg.data.test.ann_file)))
+    train_seen_classes_str = list(set(load_coco_categories(cfg.data.train.ann_file)))
+    train_seen_classes= find_indexes(CLASSES,train_seen_classes_str)
+
+    counts1 = count_category_ids(cfg.data.test.ann_file)
+    """
+    result = counts1.copy()  # Start with dict1's keys and values
+    for key, value in counts2.items():
+        if key in result:
+            # If the key is in dict1, add the values
+            result[key] += value
+        else:
+            # If the key is not in dict1, add the key-value pair
+            result[key] = value
+    plot_histogram_from_dict(result, "histogram.png")
+    """
+    selected_test_cate = extract_category_ids_above_threshold(counts1,0)
 
     def __init__(self,
                  ann_file,
@@ -37,10 +157,18 @@ class OneShotVOCDataset(CustomDataset):
                  proposal_file=None,
                  test_mode=False,
                  test_seen_classes=False,
-                 position=0):
-        self.split = [1, 8, 10, 17]
+                 position=0,
+                 train_seen_classes = train_seen_classes,
+                 selected_category_for_test = selected_test_cate
+                 ):
+        self.split = train_seen_classes
+
+        #print(self.split)
         self.test_seen_classes = test_seen_classes
         self.position = position
+        self.selected_category_for_test = selected_category_for_test
+        #print(position)s
+
         classes = None 
         super(OneShotVOCDataset,
               self).__init__(ann_file, pipeline, classes, data_root, img_prefix,
@@ -54,18 +182,27 @@ class OneShotVOCDataset(CustomDataset):
         self.img_ids = self.coco.get_img_ids()
         img_infos, img_cates = self.generate_infos()
         self.cates = img_cates
+        #print(self.cates)
         return img_infos
 
-    def split_cats(self):
-        self.train_cat = []
+    def split_cats(self,train_seen_classes = train_seen_classes):
+        self.train_cat =[]
         self.test_cat = []
+
+        #print(self.cat_ids)
         for i in range(len(self.cat_ids)):
-            if (i + 1) in self.split:
-                self.test_cat.append(self.cat_ids[i])
+            if i not in self.split and i in self.selected_category_for_test:
+                self.test_cat.append(self.cat_ids[i])#categoryを何らかの形で分割している？？
+                #print(i)
+                #print(self.test_cat)
+                #print(train_seen_classes)
             else:
                 self.train_cat.append(self.cat_ids[i])
         if self.test_seen_classes:
-            self.test_cat = self.train_cat
+            test_seen_cat = [x for x in train_seen_classes if x in self.selected_category_for_test]
+            self.test_cat = test_seen_cat
+        #print(self.train_cat)
+        print(self.test_cat)
 
     def generate_infos(self):
         img_infos = []
@@ -82,6 +219,8 @@ class OneShotVOCDataset(CustomDataset):
         info['filename'] = info['file_name']
         img_anns_ids = self.coco.get_ann_ids(img_ids=[i])
         img_anns = self.coco.load_anns(img_anns_ids)
+        #print("This is seen classes to train")
+        #print(img_anns)
         for img_ann in img_anns:
             if img_ann['category_id'] in self.train_cat:
                 img_infos.append(info)
@@ -90,8 +229,10 @@ class OneShotVOCDataset(CustomDataset):
 
     def generate_test(self, i, img_infos, img_cates):
         info = self.coco.loadImgs([i])[0]
+        #print(info)
         info['filename'] = info['file_name']
         img_anns_ids = self.coco.getAnnIds(imgIds=i)
+        #print(img_anns_ids)
         img_anns = self.coco.loadAnns(img_anns_ids)
         img_cats = list()
         for img_ann in img_anns:
@@ -103,6 +244,7 @@ class OneShotVOCDataset(CustomDataset):
                 img_cates.append(img_ann['category_id'])
             else:
                 continue
+        #print()
         return img_infos, img_cates
 
     def get_ann_info(self, idx, cate=None):
@@ -113,7 +255,7 @@ class OneShotVOCDataset(CustomDataset):
             cate = self.random_cate(ann_info)
         return self._parse_ann_info(self.data_infos[idx], ann_info, cate)
 
-    def _filter_imgs(self, min_size=32):
+    def _filter_imgs(self, min_size=32):#original 32
         """Filter images too small or without ground truths."""
         valid_inds = []
         ids_with_ann = set(_['image_id'] for _ in self.coco.anns.values())
@@ -145,6 +287,7 @@ class OneShotVOCDataset(CustomDataset):
         while cate not in cates:
             index = np.random.randint(len(ann_info))
             cate = ann_info[index]['category_id']
+        #print(cate)
         return cate
 
     def _parse_ann_info(self, img_info, ann_info, cate_select):
@@ -169,7 +312,7 @@ class OneShotVOCDataset(CustomDataset):
             elif ann['category_id'] == cate_select:
                 gt_bboxes.append(bbox)
                 gt_labels.append(0)
-                gt_masks_ann.append(ann['segmentation'])
+                #gt_masks_ann.append(ann['segmentation'])
             else:
                 continue
 
@@ -212,30 +355,52 @@ class OneShotVOCDataset(CustomDataset):
                 rf_img_info['file_name'] = self.coco.loadImgs([rf_id])[0]['file_name']
                 break
         rf_img_info['img_info'] = self.coco.loadImgs([rf_id])[0]
+        #print(rf_img_info)
+        #print("this is train classes")
+        #print(rf_img_info)
+        crop_image(rf_img_info)
         return rf_img_info
 
     def prepare_test_ref_img(self, idx, cate):
         rf_img_info = dict()
         img_id = self.data_infos[idx]['id']
+        #print(img_id)
         rf_ids = self.coco.getAnnIds(catIds=[cate], iscrowd=False)
-
+        
+        #print(rf_ids)
+        
         random.seed(img_id)
         l = list(range(len(rf_ids)))
-        random.shuffle(l)
+        #print
+        #random.shuffle(l)
+        #print(l[0])
+        #print(l)
 
-        position = l[self.position % len(l)]
+        position = l[(self.position) % len(l)]
+
+        #print(position)
+        #print(position)
+        #print(position)
         ref = rf_ids[position]
+        #print(rf_ids)
+        #print(ref)
+        #print(position)
 
         rf_anns = self.coco.loadAnns(ref)[0]
+
+        #print(rf_anns)
         rf_img_info['ann'] = rf_anns
         rf_img_info['file_name'] = self.coco.loadImgs(rf_anns['image_id'])[0]['file_name']
         rf_img_info['img_info'] = self.coco.loadImgs(rf_anns['image_id'])[0]
+        #print(rf_img_info)
+        crop_image(rf_img_info)
         return rf_img_info
 
     def prepare_train_img(self, idx):
         img_info = self.data_infos[idx]
         ann_info = self.get_ann_info(idx)
         rf_img_info = self.prepare_train_ref_img(idx, ann_info['cate'])
+        #print(ann_info['cate'])
         results = dict(img_info=img_info,
                        ann_info=ann_info,
                        rf_img_info=rf_img_info)
@@ -247,12 +412,22 @@ class OneShotVOCDataset(CustomDataset):
     def prepare_test_img(self, idx):
         img_info = self.data_infos[idx]
         ann_info = self.get_ann_info(idx, self.cates[idx])
+        #print(idx)
+     
         rf_img_info = self.prepare_test_ref_img(idx, self.cates[idx])
+
+        #print(ann_info["ann"]["category_id"])
+        #print(rf_img_info)
         results = dict(img_info=img_info,
                        ann_info=ann_info,
                        rf_img_info=rf_img_info,
                        label=self.cat2label[self.cates[idx]])
         if self.proposals is not None:
             results['proposals'] = self.proposals[idx]
+            #print(results["proposals"])
+
         self.pre_pipeline(results)
+        crop_image(rf_img_info)
+        #print(str(self.pre_pipeline(results)))
+        #print(rf_img_info)
         return self.pipeline(results)

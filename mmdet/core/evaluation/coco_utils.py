@@ -5,6 +5,8 @@ import numpy as np
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 from terminaltables import AsciiTable
+import csv
+import os
 
 from .recall import eval_recalls
 
@@ -15,7 +17,8 @@ def coco_eval(result_files,
               img_ids=None,
               img_labels=None,
               max_dets=(100, 300, 1000),
-              classwise=False):
+              classwise=False,
+              output_csv=None):
     for res_type in result_types:
         assert res_type in [
             'proposal', 'proposal_fast', 'bbox', 'segm', 'keypoints'
@@ -30,6 +33,8 @@ def coco_eval(result_files,
         for i, num in enumerate(max_dets):
             print('AR@{}\t= {:.4f}'.format(num, ar[i]))
         return
+
+    eval_results = []
 
     for res_type in result_types:
         if isinstance(result_files, str):
@@ -57,6 +62,31 @@ def coco_eval(result_files,
         cocoEval.evaluate()
         cocoEval.accumulate()
         cocoEval.summarize()
+        eval_results.append({
+            'result_type': res_type,
+            'AP': cocoEval.stats[0],
+            'AP50': cocoEval.stats[1],
+            'AP75': cocoEval.stats[2],
+            'AP_small': cocoEval.stats[3],
+            'AP_medium': cocoEval.stats[4],
+            'AP_large': cocoEval.stats[5],
+            'AR1': cocoEval.stats[6],
+            'AR10': cocoEval.stats[7],
+            'AR100': cocoEval.stats[8],
+            'AR_small': cocoEval.stats[9],
+            'AR_medium': cocoEval.stats[10],
+            'AR_large': cocoEval.stats[11]
+        })
+
+    # CSVに結果を追加
+    if output_csv:
+        file_exists = os.path.isfile(output_csv)
+        keys = eval_results[0].keys()
+        with open(output_csv, 'a', newline='') as output_file:
+            dict_writer = csv.DictWriter(output_file, keys)
+            if not file_exists:
+                dict_writer.writeheader()  # ファイルが存在しない場合はヘッダーを書き込む
+            dict_writer.writerows(eval_results)
 
         classwise_ = False 
         if classwise_: 

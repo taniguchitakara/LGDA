@@ -295,6 +295,7 @@ class DeformableDetrTransformerDecoder(TransformerLayerSequence):
                 [num_layers, num_query, bs, embed_dims].
         """
         output = query
+        #print(query)
         intermediate = []
         intermediate_reference_points = []
         for lid, layer in enumerate(self.layers):

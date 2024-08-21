@@ -68,6 +68,7 @@ def imshow_det_bboxes(img,
     Returns:
         ndarray: The image with bboxes drawn on it.
     """
+    #print(labels)
     assert bboxes.ndim == 2, \
         f' bboxes ndim should be 2, but its ndim is {bboxes.ndim}.'
     assert labels.ndim == 1, \
@@ -125,7 +126,9 @@ def imshow_det_bboxes(img,
 
     polygons = []
     color = []
+    #print(labels)
     for i, (bbox, label) in enumerate(zip(bboxes, labels)):
+        #print(label)
         bbox_int = bbox.astype(np.int32)
         poly = [[bbox_int[0], bbox_int[1]], [bbox_int[0], bbox_int[3]],
                 [bbox_int[2], bbox_int[3]], [bbox_int[2], bbox_int[1]]]
@@ -134,6 +137,7 @@ def imshow_det_bboxes(img,
         color.append(bbox_color)
         label_text = class_names[
             label] if class_names is not None else f'class {label}'
+        #print(label_text)
         if len(bbox) > 4:
             label_text += f'|{bbox[-1]:.02f}'
         ax.text(

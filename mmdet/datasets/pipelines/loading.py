@@ -1,11 +1,13 @@
 import os.path as osp
 
 import mmcv
+
 import numpy as np
 import pycocotools.mask as maskUtils
 
 from mmdet.core import BitmapMasks, PolygonMasks
 from ..builder import PIPELINES
+
 
 
 @PIPELINES.register_module()
@@ -371,6 +373,7 @@ class LoadAnnotations:
             results = self._load_masks(results)
         if self.with_seg:
             results = self._load_semantic_seg(results)
+        #(results)
         return results
 
     def __repr__(self):

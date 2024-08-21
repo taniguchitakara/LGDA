@@ -1,0 +1,1 @@
+./tools/dist_train.sh configs/manga/BHRL_lovehina_mono.py 1 --no-validate

@@ -2,6 +2,8 @@ import copy
 import inspect
 
 import mmcv
+from torchvision import transforms
+
 import numpy as np
 from numpy import random
 
@@ -21,6 +23,22 @@ except ImportError:
     albumentations = None
     Compose = None
 
+
+@PIPELINES.register_module()
+class Solarize:
+    """Add your transform
+
+    Args:
+        p (float): Probability of shifts. Default 0.5.
+    """
+
+    def __init__(self, prob=0.5):
+        self.prob = prob
+
+    def transform(self, results):
+        if random.random() > self.prob:
+            results['img'] = transforms.RandomSolarize(threshold=100)(results['img'])
+        return results
 
 @PIPELINES.register_module()
 class Resize:
@@ -1358,7 +1376,7 @@ class Albu:
             self.keymap_to_albu = {
                 'img': 'image',
                 'gt_masks': 'masks',
-                'gt_bboxes': 'bboxes'
+                'gt_bboxes': 'bboxes',
             }
         else:
             self.keymap_to_albu = keymap
@@ -1437,8 +1455,17 @@ class Albu:
                 results['masks'] = results['masks'].masks
             else:
                 results['masks'] = [mask for mask in results['masks'].masks]
+        #print(**results[])
+        # 必要なキーを選択
 
-        results = self.aug(**results)
+        necessary_keys = ['image']  # 必要なキーのリスト
+        selected_results = {key: results[key] for key in necessary_keys if key in results}
+
+        # 選択したキーでaugを呼び出す
+        augmented_results = self.aug(**selected_results)
+
+        # augmented_resultsを元のresultsにマージする
+        results.update(augmented_results)
 
         if 'bboxes' in results:
             if isinstance(results['bboxes'], list):
@@ -1916,9 +1943,11 @@ class ReferenceTransform(object):
 
     def __call__(self, results):
         if self.keep_ratio:
+            #print(results['rf_img'])
             rf_img, scale_factor = mmcv.imrescale(results['rf_img'],
                                                  self.img_scale,
                                                  return_scale=True)
+            #print(scale_factor)
         else:
             rf_img, w_scale, h_scale = mmcv.imresize(results['rf_img'],
                                                     self.img_scale,

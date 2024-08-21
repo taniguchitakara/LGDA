@@ -1,10 +1,11 @@
 import warnings
-
+import torch
+import copy
 import torch.nn as nn
 import torch.nn.functional as F
 from mmcv.cnn import ConvModule
 from mmcv.runner import BaseModule, auto_fp16
-
+from ..plugins.generate_ref_roi_feats import add_gaussian_noise
 from ..builder import NECKS
 
 
@@ -70,6 +71,8 @@ class FPN(BaseModule):
                  num_outs,
                  start_level=0,
                  end_level=-1,
+                 stddev  = 0.1,
+                 mean = 0,
                  add_extra_convs=False,
                  extra_convs_on_inputs=True,
                  relu_before_extra_convs=False,
@@ -90,6 +93,8 @@ class FPN(BaseModule):
         self.no_norm_on_lateral = no_norm_on_lateral
         self.fp16_enabled = False
         self.upsample_cfg = upsample_cfg.copy()
+        self.stddev = stddev  # 標準偏差
+        self.mean = mean  # 平均値
 
         if end_level == -1:
             self.backbone_end_level = self.num_ins
@@ -215,3 +220,11 @@ class FPN(BaseModule):
                     else:
                         outs.append(self.fpn_convs[i](outs[-1]))
         return tuple(outs)
+'''
+        you_want_to_train_2 = True
+        outs_2 = copy.deepcopy(outs_2)
+        if you_want_to_train_2 == True:
+            for i in range(len(outs_2)):
+                noise = torch.randn_like(outs_2[i]) * self.stddev + self.mean
+                outs_2[i] += noise
+'''

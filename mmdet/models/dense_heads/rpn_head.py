@@ -7,7 +7,10 @@ from mmcv.ops import batched_nms
 
 from ..builder import HEADS
 from .anchor_head import AnchorHead
-
+def add_gaussian_noise(x, mean=0, std=0.1):
+    """特徴マップにガウシアンノイズを加える関数."""
+    noise = torch.randn_like(x) * std + mean  # ガウシアンノイズの生成
+    return x + noise  # ノイズを特徴マップに加える
 
 @HEADS.register_module()
 class RPNHead(AnchorHead):
@@ -36,9 +39,13 @@ class RPNHead(AnchorHead):
     def forward_single(self, x):
         """Forward feature map of a single scale level."""
         x = self.rpn_conv(x)
+        #noisy_x = copy.deepcopy(add_gaussian_noise(x, mean=0, std=0.1))
         x = F.relu(x, inplace=True)
+        #noisy_x = F.relu(noisy_x, inplace=True)
         rpn_cls_score = self.rpn_cls(x)
         rpn_bbox_pred = self.rpn_reg(x)
+        #noisy_rpn_cls_score = self.rpn_cls(noisy_x)
+        #noisy_rpn_bbox_pred = self.rpn_reg(noisy_x)
         return rpn_cls_score, rpn_bbox_pred
 
     def loss(self,

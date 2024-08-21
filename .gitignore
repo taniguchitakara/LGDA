@@ -121,4 +121,10 @@ work_dirs/
 
 checkpoints/
 resnet_model/
+work_dirs/
+not_used/
+data/
+*.csv
+*.pkl
+
 

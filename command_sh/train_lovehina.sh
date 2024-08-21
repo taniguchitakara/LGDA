@@ -1,0 +1,1 @@
+./tools/dist_train.sh configs/manga/BHRL_manga.py 1 --no-validate

@@ -17,7 +17,7 @@ from .custom import CustomDataset
 import copy
 import pickle
 import random
-
+file_path = "/large/ttani_2/bhrl/aiueo.txt"
 @DATASETS.register_module()
 class OneShotCocoDataset(CustomDataset):
 
@@ -34,7 +34,8 @@ class OneShotCocoDataset(CustomDataset):
                'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop',
                'mouse', 'remote', 'keyboard', 'cell phone', 'microwave',
                'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock',
-               'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush')
+               'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush','000386f5', '00037691', '000376f1', '00035f83', '00038deb', '00036c03', '00035faa', '00038b3c', '00036141', '00036bf6', '00036b93', '00037f03', '00035fac', '0003889b', '00037677', '00035fa6', '00037a97', '000376ed', '000376a1', '00037671', '00035f85', '000376d1', '000384a6', '000386e1', '000376e3', '00037701', '00037755', '000376c0', '00035fa8', '00035fc0', '000377ee', '000379ee')
+
 
     def __init__(self,
                  ann_file,
@@ -54,6 +55,7 @@ class OneShotCocoDataset(CustomDataset):
         self.test_seen_classes = test_seen_classes 
         self.ref_ann_file = ref_ann_file #ref denotes the query in the paper. 
         self.position = position
+        #print(self.position)
         classes = None 
         super(OneShotCocoDataset,
               self).__init__(ann_file, pipeline, classes, data_root, img_prefix,
@@ -228,6 +230,7 @@ class OneShotCocoDataset(CustomDataset):
                     continue
                 else:
                     break
+
         return rf_img_info
 
     def prepare_test_ref_img(self, idx, cate):
@@ -263,11 +266,15 @@ class OneShotCocoDataset(CustomDataset):
         img_info = self.data_infos[idx]
         ann_info = self.get_ann_info(idx, self.cates[idx])
         rf_img_info = self.prepare_test_ref_img(idx, self.cates[idx])
+
         results = dict(img_info=img_info,
                        ann_info=ann_info,
                        rf_img_info=rf_img_info,
                        label=self.cat2label[self.cates[idx]])
+        #print(results)
         if self.proposals is not None:
             results['proposals'] = self.proposals[idx]
+        with open(file_path, 'a') as file:
+            file.write(str(rf_img_info) + '\n')
         self.pre_pipeline(results)
         return self.pipeline(results)

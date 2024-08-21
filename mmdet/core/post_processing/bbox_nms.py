@@ -32,6 +32,8 @@ def multiclass_nms(multi_bboxes,
             (k), and (k). Dets are boxes with scores. Labels are 0-based.
     """
     num_classes = multi_scores.size(1) - 1
+    #print(multi_bboxes.shape[0])
+    #print(multi_scores.shape[0])
     # exclude background category
     if multi_bboxes.shape[1] > 4:
         bboxes = multi_bboxes.view(multi_scores.size(0), -1, 4)

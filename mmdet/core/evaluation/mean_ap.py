@@ -314,6 +314,8 @@ def eval_map(det_results,
     num_classes = len(det_results[0])  # positive class num
     area_ranges = ([(rg[0]**2, rg[1]**2) for rg in scale_ranges]
                    if scale_ranges is not None else None)
+    print("num_class is")
+    print(num_classes)
 
     pool = Pool(nproc)
     eval_results = []

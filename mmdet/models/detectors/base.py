@@ -12,7 +12,6 @@ from mmdet.core.visualization import imshow_det_bboxes
 
 class BaseDetector(BaseModule, metaclass=ABCMeta):
     """Base class for detectors."""
-
     def __init__(self, init_cfg=None):
         super(BaseDetector, self).__init__(init_cfg)
         self.fp16_enabled = False

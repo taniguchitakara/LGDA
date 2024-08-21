@@ -33,6 +33,7 @@ from .yolact import YOLACT
 from .yolo import YOLOV3
 from .yolof import YOLOF
 from .bhrl import BHRL
+from .bhrl_original import BHRL_original
 __all__ = [
     'ATSS', 'BaseDetector', 'SingleStageDetector', 'TwoStageDetector', 'RPN',
     'KnowledgeDistillationSingleStageDetector', 'FastRCNN', 'FasterRCNN',
@@ -40,5 +41,5 @@ __all__ = [
     'GridRCNN', 'MaskScoringRCNN', 'RepPointsDetector', 'FOVEA', 'FSAF',
     'NASFCOS', 'PointRend', 'GFL', 'CornerNet', 'PAA', 'YOLOV3', 'YOLACT',
     'VFNet', 'DETR', 'TridentFasterRCNN', 'SparseRCNN', 'SCNet',
-    'DeformableDETR', 'AutoAssign', 'YOLOF', 'CenterNet', 'BHRL'
+    'DeformableDETR', 'AutoAssign', 'YOLOF', 'CenterNet', 'BHRL','BHRL_original'
 ]

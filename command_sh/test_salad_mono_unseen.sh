@@ -1,0 +1,1 @@
+./tools/dist_test.sh configs/manga/BHRL_salad_mono.py ./work_dirs/manga/BHRL_salad_mono_trained_gaussian_fpn_sum_2/epoch_50.pth 1 --out ./lovehina_be_visualized/salad_mono_trained_gaussian_fpn_sum_2_results_seen.pkl --eval bbox --test_seen_class

@@ -1,0 +1,1 @@
+./tools/dist_train.sh configs/manga/BHRL_allpairs_mono_solarize.py 1 --no-validate

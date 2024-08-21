@@ -1,0 +1,1 @@
+./tools/dist_test.sh configs/manga/BHRL_salad_colorized.py ./work_dirs/manga/BHRL_salad/epoch_20.pth 1 --out ./lovehina_be_visualized/salad_results_unseen.pkl --eval bbox 

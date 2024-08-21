@@ -7,6 +7,7 @@ import warnings
 
 import mmcv
 import torch
+import json
 from mmcv import Config, DictAction
 from mmcv.runner import get_dist_info, init_dist
 from mmcv.utils import get_git_hash
@@ -83,10 +84,21 @@ def parse_args():
     return args
 
 
+def load_coco_categories(annotation_file_path):
+    with open(annotation_file_path, 'r') as f:
+        data = json.load(f)
+    
+    categories = tuple(category['name'] for category in data['categories'])
+    
+    return categories
+
 def main():
     args = parse_args()
+    global config_global
+
 
     cfg = Config.fromfile(args.config)
+    config_global = Config.fromfile(args.config)
     if args.cfg_options is not None:
         cfg.merge_from_dict(args.cfg_options)
     # import modules from string list.
@@ -162,6 +174,7 @@ def main():
     model.init_weights()
     # print(model)
     datasets = [build_dataset(cfg.data.train)]
+    #print(datasets)
     if len(cfg.workflow) == 2:
         val_dataset = copy.deepcopy(cfg.data.val)
         val_dataset.pipeline = cfg.data.train.pipeline
@@ -174,6 +187,7 @@ def main():
             CLASSES=datasets[0].CLASSES)
     # add an attribute for visualization convenience
     model.CLASSES = datasets[0].CLASSES
+    #print(model.CLASSES)
     train_detector(
         model,
         datasets,

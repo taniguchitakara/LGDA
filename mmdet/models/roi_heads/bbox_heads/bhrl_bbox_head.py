@@ -9,6 +9,8 @@ from .bbox_head import BBoxHead
 import numpy as np
 import torch
 from mmdet.models.plugins import IHR
+from ...plugins.generate_ref_roi_feats import add_gaussian_noise
+
 from ...builder import build_loss
 import torch
 import torch.nn.functional as F
@@ -85,6 +87,28 @@ class BHRLConvFCBBoxHead(BBoxHead):
             if isinstance(m, nn.Linear):
                 xavier_init(m, distribution='uniform')
 
+    def forward(self, target, rois=None , query=None):
+        #print(1)
+        inds = rois[:,0]
+        #inds_folk = rois_folk[:,0]
+
+        relation = (self.metric_module(target,query[inds.long()]))#) + self.metric_module(target,add_gaussian_noise(query[inds.long()])))/2#+ self.metric_module(target,query_folk[inds_folk.long()]))/2
+        #print(relation)
+
+        if relation is not None:
+            relation_fc = relation.view(relation.size(0), -1)
+            for fc in self.fc_branch:
+                relation_fc = self.relu(fc(relation_fc))
+            cls_score = self.fc_cls(relation_fc)
+        else:
+            cls_score = None
+    
+        bbox_pred = self.fc_reg(relation_fc)
+
+        return cls_score, bbox_pred
+
+"""
+    #the code below is original forward funcition
     def forward(self, target, rois=None, query=None):
  
         inds = rois[:,0]
@@ -102,4 +126,4 @@ class BHRLConvFCBBoxHead(BBoxHead):
         bbox_pred = self.fc_reg(relation_fc)
 
         return cls_score, bbox_pred
-        
+"""     

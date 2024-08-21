@@ -76,6 +76,7 @@ class ResultVisualizer:
             fname, name = osp.splitext(osp.basename(filename))
             save_filename = fname + '_' + str(round(mAP, 3)) + name
             out_file = osp.join(out_dir, save_filename)
+            #print(results[index])
             imshow_gt_det_bboxes(
                 data_info['img'],
                 data_info,
@@ -194,6 +195,7 @@ def main():
 
     result_visualizer = ResultVisualizer(args.show, args.wait_time,
                                          args.show_score_thr)
+    print(dataset)
     result_visualizer.evaluate_and_show(
         dataset, outputs, topk=args.topk, show_dir=args.show_dir)
 

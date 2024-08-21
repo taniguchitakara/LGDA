@@ -307,7 +307,7 @@ class BBoxHead(BaseModule):
         return losses
 
     @force_fp32(apply_to=('cls_score', 'bbox_pred'))
-    def get_bboxes(self,
+    def get_bboxes_preprocess(self,
                    rois,
                    cls_score,
                    bbox_pred,
@@ -366,13 +366,18 @@ class BBoxHead(BaseModule):
 
         # some loss (Seesaw loss..) may have custom activation
         if self.custom_cls_channels:
+            #print(1)
             scores = self.loss_cls.get_activation(cls_score)
         else:
+            #in BHRL,this "else"is used for test
+            #print(1)
             scores = F.softmax(
                 cls_score, dim=-1) if cls_score is not None else None
 
         if rois.ndim == 2:
             # e.g. AugTest, Cascade R-CNN, HTC, SCNet...
+            #print(2)
+            #in BHRL, this ndim==2 is used for the test
             batch_mode = False
             # add batch dimension
             if scores is not None:
@@ -385,6 +390,7 @@ class BBoxHead(BaseModule):
             scale_factor = (scale_factor, )
 
         elif rois.ndim == 3:
+            #print(3)
             # all input tensor have batch dimension
             batch_mode = True
             assert isinstance(scale_factor, tuple)
@@ -394,6 +400,7 @@ class BBoxHead(BaseModule):
         # bbox_pred would be None in some detector when with_reg is False,
         # e.g. Grid R-CNN.
         if bbox_pred is not None:
+            #bbox_pred is given
             bboxes = self.bbox_coder.decode(
                 rois[..., 1:], bbox_pred, max_shape=img_shape)
         else:
@@ -409,13 +416,89 @@ class BBoxHead(BaseModule):
         num_bboxes = bboxes.size(-2)
         if rescale and num_bboxes > 0:
             # B, 1, bboxes.size(-1)
+            #in BHRL, rescale is set ,so this code is used
             scale_factor = bboxes.new_tensor(scale_factor).unsqueeze(1).repeat(
                 1, 1,
                 bboxes.size(-1) // 4)
             bboxes /= scale_factor
+        
+        return bboxes, scores, batch_mode, scale_factor
+
+    @force_fp32(apply_to=('cls_score', 'bbox_pred'))
+    def get_bboxes(self,
+                   rois,
+                   cls_score,
+                   bbox_pred,
+                   img_shape,
+                   scale_factor,
+                   rescale=False,
+                   cfg=None):
+        """Transform network output for a batch into bbox predictions.
+
+        In most case except Cascade R-CNN, HTC, AugTest..,
+        the dimensions of input rois, cls_score, bbox_pred are equal
+        to 3, and batch dimension is the first dimension, for example
+        roi has shape (B, num_boxes, 5), return is a
+        tuple[list[Tensor], list[Tensor]],
+        the length of list in tuple is equal to the batch_size.
+        otherwise, the input tensor has only 2 dimensions,
+        and return is a tuple[Tensor, Tensor].
+
+        Args:
+            rois (Tensor): Boxes to be transformed. Has shape (num_boxes, 5)
+               or (B, num_boxes, 5)
+            cls_score (Tensor): Box scores, Has shape
+               (B, num_boxes, num_classes + 1) in `batch_model`, otherwise
+                has shape (num_boxes, num_classes + 1).
+            bbox_pred (Tensor, optional): Box energies / deltas. Has shape
+                (B, num_boxes, num_classes * 4) in `batch_model`, otherwise
+                has shape (num_boxes, num_classes * 4).
+            img_shape (Sequence[int] or Sequence[
+                Sequence[int]], optional): Maximum bounds for boxes, specifies
+                (H, W, C) or (H, W). If rois shape is (B, num_boxes, 4), then
+                the max_shape should be a Sequence[Sequence[int]]
+                and the length of max_shape should be equal to the batch_size.
+            scale_factor (tuple[ndarray] or ndarray): Scale factor of the
+               image arrange as (w_scale, h_scale, w_scale, h_scale). In
+               `batch_mode`, the scale_factor shape is tuple[ndarray].
+               the length should be equal to the batch size.
+            rescale (bool): If True, return boxes in original image space.
+                Default: False.
+            cfg (obj:`ConfigDict`): `test_cfg` of Bbox Head. Default: None
+
+        Returns:
+            tuple[list[Tensor], list[Tensor]] or tuple[Tensor, Tensor]:
+                If the input has a batch dimension, the return value is
+                a tuple of the list. The first list contains the boxes of
+                the corresponding image in a batch, each tensor has the
+                shape (num_boxes, 5) and last dimension 5 represent
+                (tl_x, tl_y, br_x, br_y, score). Each Tensor in the second
+                list is the labels with shape (num_boxes, ). The length of
+                both lists should be equal to batch_size. Otherwise return
+                value is a tuple of two tensors, the first tensor is the
+                boxes with scores, the second tensor is the labels, both
+                have the same shape as the first case.
+        """
+
+        bboxes, scores, batch_mode, scale_factor = self.get_bboxes_preprocess(
+                   rois,
+                   cls_score,
+                   bbox_pred,
+                   img_shape,
+                   scale_factor,
+                   rescale=rescale,
+                   cfg=cfg)
+
 
         det_bboxes = []
         det_labels = []
+        #print(bboxes)
+        #print(scores)
+        #bbox_clone = bboxes.clone()
+        #scores_clone = scores.clone()
+        #bboxes = torch.cat((bboxes,bbox_clone), dim=0)
+        #scores = torch.cat((scores_clone,scores),dim = 0)
+        #print(len(scores))
         for (bbox, score) in zip(bboxes, scores):
             if cfg is not None:
                 det_bbox, det_label = multiclass_nms(bbox, score,
@@ -425,8 +508,46 @@ class BBoxHead(BaseModule):
                 det_bbox, det_label = bbox, score
             det_bboxes.append(det_bbox)
             det_labels.append(det_label)
-
+        #print(len(det_bboxes[0]))
         if not batch_mode:
+            single_det_bboxes = det_bboxes[0]
+            single_det_labels = det_labels[0]
+            # tuple[Tensor, Tensor]
+            return single_det_bboxes, single_det_labels
+        else:
+            # tuple[list[Tensor], list[Tensor]]
+            return det_bboxes, det_labels
+
+    def get_bboxes_folk(self,
+                   bboxes,
+                   scores,
+                   batch_mode,
+                   cfg=None):
+        det_bboxes = []
+        det_labels = []
+        #print(bboxes)
+        #print(scores)
+        #bbox_clone = bboxes.clone()
+        #scores_clone = scores.clone()
+        #bboxes = torch.cat((bboxes,bbox_clone), dim=0)
+        #scores = torch.cat((scores_clone,scores),dim = 0)
+        for (bbox, score) in zip(bboxes, scores):
+            if cfg is not None:
+                #こちらで動いているようだ
+                det_bbox, det_label = multiclass_nms(bbox, score,
+                                                     cfg.score_thr, cfg.nms,
+                                                     cfg.max_per_img)
+                #print(1)
+            else:
+                det_bbox, det_label = bbox, score
+            det_bboxes.append(det_bbox)
+            det_labels.append(det_label)
+
+        #print(det_bboxes)
+        #print(len(det_bboxes[0]))
+        if not batch_mode:
+            #print(1)
+            #in BHRL, this is used
             single_det_bboxes = det_bboxes[0]
             single_det_labels = det_labels[0]
             # tuple[Tensor, Tensor]

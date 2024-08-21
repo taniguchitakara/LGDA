@@ -1,0 +1,1 @@
+./tools/dist_test.sh configs/manga/BHRL_allpairs_mono.py ./work_dirs/manga/BHRL_allpairs_mono_trained_tensor_gaussian_changeallcomponent_fpn_sum_2/epoch_30.pth 1 --out ./lovehina_be_visualized/allpairs_mono_tmp_results_unseen.pkl --eval bbox --test_seen_class
