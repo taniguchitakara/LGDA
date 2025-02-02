@@ -73,6 +73,10 @@ BHRL
 ./tools/dist_train.sh configs/coco/split1/BHRL.py 8 --no-validate
 ```
 
+## Parameter explained
+You can change parameters of training in ```/large/ttani_2/bhrl/configs/manga/BHRL_allpairs_mono.py```. For example ,```training_type = "Channel", threshold = 0```
+
+
 ## Citation
 If you find our work useful in your research, please consider citing:
 
