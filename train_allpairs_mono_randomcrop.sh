@@ -1,1 +1,0 @@
-./tools/dist_train.sh configs/manga/BHRL_allpairs_mono_randomcrop.py 1 --no-validate

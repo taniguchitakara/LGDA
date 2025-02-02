@@ -20,8 +20,8 @@ from PIL import Image, ImageDraw, ImageFont
 import copy
 import random
 import json
-
-
+import matplotlib.pyplot as plt
+from collections import Counter
 import os
 from PIL import Image
 
@@ -45,15 +45,6 @@ def count_category_ids(coco_json_file):
             category_counts[category_id] = 1
 
     return category_counts
-"""
-if __name__ == "__main__":
-    coco_json_file = "your_coco_json_file.json"  # あなたのCOCO形式のJSONファイルのパスに置き換えてください
-    counts = count_category_ids(coco_json_file)
-
-    print("category_idの数と登場回数:")
-    for category_id, count in counts.items():
-        print(f"category_id: {category_id}, 登場回数: {count}")
-"""
 
 def crop_image(annotation):
     #print(annotation)
@@ -70,11 +61,7 @@ def crop_image(annotation):
     
     os.makedirs(output_folder, exist_ok=True)  # フォルダが存在しない場合に作成する
     cropped_image.save(f"{output_folder}/{image_category}.jpg")
-"""
-if __name__ == "__main__":
-    json_file = "../crop_face_ref_lovehina14.json"
-    crop_image(json_file)
-"""
+
 def load_coco_categories(annotation_file_path):
     with open(annotation_file_path, 'r') as f:
         data = json.load(f)
@@ -92,9 +79,6 @@ def find_indexes(lst, arr):
 
 def remove_elements(source_list, elements_to_remove):
     return [item for item in source_list if item not in elements_to_remove]
-
-import matplotlib.pyplot as plt
-from collections import Counter
 
 def plot_histogram_from_dict(dictionary, filename):
     # 辞書を値で降順にソート
@@ -117,40 +101,14 @@ def plot_histogram_from_dict(dictionary, filename):
 
 @DATASETS.register_module()
 class OneShotVOCDataset(CustomDataset):
-    """    CLASSES = ('aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car',
-               'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse',
-               'motorbike', 'person', 'pottedplant', 'sheep', 'sofa', 'train',
-               'tvmonitor',)
-"""
-    
-    #config_path = "/large/ttani_2/bhrl/configs/manga/BHRL_salad_colorized.py"
-    #config_path = "/large/ttani_2/bhrl/configs/manga/BHRL_lovehina_colorized.py"
-    #config_path = "/large/ttani_2/bhrl/configs/manga/BHRL_lovehina_mono.py"
-    #config_path = "/large/ttani_2/bhrl/configs/manga/BHRL_salad_mono.py"
-    config_path = "/large/ttani_2/bhrl/configs/manga/BHRL_allpairs_mono.py"
 
-    cfg = mmcv.Config.fromfile(config_path)
-    CLASSES = list(set(load_coco_categories(cfg.data.train.ann_file) +load_coco_categories(cfg.data.test.ann_file)))
-    train_seen_classes_str = list(set(load_coco_categories(cfg.data.train.ann_file)))
-    train_seen_classes= find_indexes(CLASSES,train_seen_classes_str)
 
-    counts1 = count_category_ids(cfg.data.test.ann_file)
-    """
-    result = counts1.copy()  # Start with dict1's keys and values
-    for key, value in counts2.items():
-        if key in result:
-            # If the key is in dict1, add the values
-            result[key] += value
-        else:
-            # If the key is not in dict1, add the key-value pair
-            result[key] = value
-    plot_histogram_from_dict(result, "histogram.png")
-    """
-    selected_test_cate = extract_category_ids_above_threshold(counts1,0)
 
     def __init__(self,
                  ann_file,
                  pipeline,
+                 config_path,
+                 threshold=0,
                  data_root=None,
                  img_prefix='',
                  seg_prefix=None,
@@ -158,18 +116,21 @@ class OneShotVOCDataset(CustomDataset):
                  test_mode=False,
                  test_seen_classes=False,
                  position=0,
-                 train_seen_classes = train_seen_classes,
-                 selected_category_for_test = selected_test_cate
                  ):
+        self.config_path =config_path
+        cfg = mmcv.Config.fromfile(config_path)
+        CLASSES = list(set(load_coco_categories(cfg.data.train.ann_file) +load_coco_categories(cfg.data.test.ann_file)))
+        train_seen_classes_str = list(set(load_coco_categories(cfg.data.train.ann_file)))
+        train_seen_classes= find_indexes(CLASSES,train_seen_classes_str)
+        counts1 = count_category_ids(cfg.data.test.ann_file)
         self.split = train_seen_classes
 
-        #print(self.split)
         self.test_seen_classes = test_seen_classes
         self.position = position
-        self.selected_category_for_test = selected_category_for_test
-        #print(position)s
+        self.selected_category_for_test = extract_category_ids_above_threshold(counts1,threshold)
+        self.train_seen_classes = train_seen_classes
 
-        classes = None 
+        classes = CLASSES 
         super(OneShotVOCDataset,
               self).__init__(ann_file, pipeline, classes, data_root, img_prefix,
                              seg_prefix, proposal_file, test_mode)
@@ -178,30 +139,26 @@ class OneShotVOCDataset(CustomDataset):
         self.coco = COCO(ann_file)
         self.cat_ids = self.coco.get_cat_ids(cat_names=self.CLASSES)
         self.cat2label = {cat_id: i for i, cat_id in enumerate(self.cat_ids)}
-        self.split_cats()
+        self.split_cats(self.train_seen_classes)
         self.img_ids = self.coco.get_img_ids()
         img_infos, img_cates = self.generate_infos()
         self.cates = img_cates
         #print(self.cates)
         return img_infos
 
-    def split_cats(self,train_seen_classes = train_seen_classes):
+    def split_cats(self,train_seen_classes):
         self.train_cat =[]
         self.test_cat = []
 
         #print(self.cat_ids)
         for i in range(len(self.cat_ids)):
             if i not in self.split and i in self.selected_category_for_test:
-                self.test_cat.append(self.cat_ids[i])#categoryを何らかの形で分割している？？
-                #print(i)
-                #print(self.test_cat)
-                #print(train_seen_classes)
+                self.test_cat.append(self.cat_ids[i])
             else:
                 self.train_cat.append(self.cat_ids[i])
         if self.test_seen_classes:
             test_seen_cat = [x for x in train_seen_classes if x in self.selected_category_for_test]
             self.test_cat = test_seen_cat
-        #print(self.train_cat)
         print(self.test_cat)
 
     def generate_infos(self):

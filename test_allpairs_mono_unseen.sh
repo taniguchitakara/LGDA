@@ -1,1 +1,0 @@
-./tools/dist_test.sh configs/manga/BHRL_allpairs_mono.py ./work_dirs/manga/allpairs/normal/haiperprameter01/epoch_30.pth 1 --out ./lovehina_be_visualized/allpairs_mono_tmp_results_unseen.pkl --eval bbox 

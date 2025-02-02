@@ -31,7 +31,8 @@ class BHRL(TwoStageDetector):
                  test_cfg,
                  neck=None,
                  pretrained=None,
-                 init_cfg=None):
+                 init_cfg=None,
+                 training_type=None):
         super(BHRL, self).__init__(backbone=backbone,
                                                     neck=neck,
                                                     rpn_head=rpn_head,
@@ -42,25 +43,51 @@ class BHRL(TwoStageDetector):
                                                     init_cfg=init_cfg)
 
         self.matching_block = MatchModule(512, 384)
-        """
-        self.stddev = nn.ParameterList([
-            nn.Parameter(torch.full((1, 1, 48, 48), 0.1)),
-            nn.Parameter(torch.full((1, 1, 24, 24), 0.1)),
-            nn.Parameter(torch.full((1, 1, 12, 12), 0.1)),
-            nn.Parameter(torch.full((1, 1, 6, 6), 0.1)),
-            nn.Parameter(torch.full((1, 1, 3, 3), 0.1))
-        ])
-        """
-        self.stddev = nn.ParameterList([
-            nn.Parameter(torch.full((1, 1, 1, 1), 0.1)),
-            nn.Parameter(torch.full((1, 1, 1, 1), 0.1)),
-            nn.Parameter(torch.full((1, 1, 1, 1), 0.1)),
-            nn.Parameter(torch.full((1, 1, 1, 1), 0.1)),
-            nn.Parameter(torch.full((1, 1, 1, 1), 0.1))
-        ])
-        #self.stddev = nn.Parameter(torch.tensor(0.1))
-        #self.stddev_for_test = torch.tensor(0.9)
-        #self.stddev = 0.1 #scalar
+        if training_type == "Position":
+            print("Training Type Position")
+            self.stddev = nn.ParameterList([
+                nn.Parameter(torch.full((1, 1, 48, 48), 0.1)),
+                nn.Parameter(torch.full((1, 1, 24, 24), 0.1)),
+                nn.Parameter(torch.full((1, 1, 12, 12), 0.1)),
+                nn.Parameter(torch.full((1, 1, 6, 6), 0.1)),
+                nn.Parameter(torch.full((1, 1, 3, 3), 0.1))
+            ])
+        if training_type == "Channel":
+            print("Training Type Channel")
+            self.stddev = nn.ParameterList([
+                nn.Parameter(torch.full((1, 256, 1, 1), 0.1)),
+                nn.Parameter(torch.full((1, 256, 1, 1), 0.1)),
+                nn.Parameter(torch.full((1, 256, 1, 1), 0.1)),
+                nn.Parameter(torch.full((1, 256, 1, 1), 0.1)),
+                nn.Parameter(torch.full((1, 256, 1, 1), 0.1))
+            ])        
+        if training_type == "Single":
+            print("Training Type Single")
+            self.stddev = nn.ParameterList([
+                nn.Parameter(torch.full((1, 1, 1, 1), 0.1)),
+                nn.Parameter(torch.full((1, 1, 1, 1), 0.1)),
+                nn.Parameter(torch.full((1, 1, 1, 1), 0.1)),
+                nn.Parameter(torch.full((1, 1, 1, 1), 0.1)),
+                nn.Parameter(torch.full((1, 1, 1, 1), 0.1))
+            ]) 
+        if training_type == "Position-Channel":
+            print("Training Type Position-Channel")
+            self.stddev = nn.ParameterList([
+                nn.Parameter(torch.full((1, 256, 48, 48), 0.1)),
+                nn.Parameter(torch.full((1, 256, 24, 24), 0.1)),
+                nn.Parameter(torch.full((1, 256, 12, 12), 0.1)),
+                nn.Parameter(torch.full((1, 256, 6, 6), 0.1)),
+                nn.Parameter(torch.full((1, 256, 3, 3), 0.1))
+            ])          
+        if training_type == "Fixed":
+            print("Training Type Fixed")
+            self.stddev = [
+                torch.full((1, 1, 1, 1), 0.1),
+                torch.full((1, 1, 1, 1), 0.1),
+                torch.full((1, 1, 1, 1), 0.1),
+                torch.full((1, 1, 1, 1), 0.1),
+                torch.full((1, 1, 1, 1), 0.1)
+            ]
 
     def matching(self, img_feat, rf_feat):
         out = []
@@ -69,9 +96,7 @@ class BHRL(TwoStageDetector):
         return out
 
     def extract_feat(self, img):
-        #print(img[0])
         img_feat = img[0]
-        #print(img[2])
         rf_feat = img[1]
         rf_bbox = img[2]
         img_feat = self.backbone(img_feat)
@@ -107,14 +132,7 @@ class BHRL(TwoStageDetector):
                       gt_masks=None,
                       proposals=None,
                       **kwargs):
-        #print(img)
-        """
-        # add gaussian
         x, img_feat, ref_roi_feats = self.extract_feat_fork1(img)
-        x_folk, img_feat, ref_roi_feats_folk = self.extract_feat_fork1(img)
-        """
-        x, img_feat, ref_roi_feats = self.extract_feat_fork1(img)
-        #x_folk, img_feat, ref_roi_feats_folk = self.extract_feat(img)
         losses = dict()
 
 
@@ -128,18 +146,6 @@ class BHRL(TwoStageDetector):
                 gt_labels=None,
                 gt_bboxes_ignore=gt_bboxes_ignore,
                 proposal_cfg=proposal_cfg)
-            
-            """
-            rpn_losses_folk, proposal_list_folk = self.rpn_head.forward_train(
-                x_folk,
-                img_metas,
-                gt_bboxes,
-                gt_labels=None,
-                gt_bboxes_ignore=gt_bboxes_ignore,
-                proposal_cfg=proposal_cfg)  
-            for key in rpn_losses.keys():
-                rpn_losses[key][0] = (rpn_losses_folk[key][0] + rpn_losses[key][0])/2 
-            """
             losses.update(rpn_losses)
             
         else:
@@ -150,15 +156,6 @@ class BHRL(TwoStageDetector):
                                                  gt_bboxes, gt_labels,
                                                  gt_bboxes_ignore, gt_masks,
                                                  **kwargs)
-        """
-        roi_losses_folk = self.roi_head.forward_train(x_folk, img_feat, ref_roi_feats_folk, 
-                                                 img_metas, proposal_list_folk,
-                                                 gt_bboxes, gt_labels,
-                                                 gt_bboxes_ignore, gt_masks,
-                                                 **kwargs)
-        for key in roi_losses.keys():
-            roi_losses[key]= (roi_losses_folk[key] + roi_losses[key])/2
-        """
         losses.update(roi_losses)
         
         return losses
@@ -174,17 +171,4 @@ class BHRL(TwoStageDetector):
             proposal_list = self.rpn_head.simple_test_rpn(x, img_metas) 
         else:
             proposal_list = proposals
-        """
-        ans_list = [[]]
-        ans = np.concatenate((np.array(self.roi_head.simple_test(x, img_feat, ref_roi_feats, proposal_list, img_metas, rescale=rescale)[0][0])
-                         ,np.array(self.roi_head.simple_test(x_folk, img_feat, ref_roi_feats_folk, proposal_list_folk, img_metas, rescale=rescale)[0][0]),
-                         np.array(self.roi_head.simple_test(x_folk2, img_feat, ref_roi_feats_folk2, proposal_list_folk2, img_metas, rescale=rescale)[0][0])))
-        sorted_ans = ans[ans[:,4].argsort()[::-1]]
-        
-        #print(sorted_ans)
-        ans_list[0].append(sorted_ans)
-        
-        return ans_list
-        """
-        #return self.roi_head.simple_test_folk(img_feat, ref_roi_feats, ref_roi_feats_folk, proposal_list, proposal_list_folk, img_metas, rescale=rescale)
         return self.roi_head.simple_test(x, img_feat, ref_roi_feats, proposal_list, img_metas, rescale=rescale)

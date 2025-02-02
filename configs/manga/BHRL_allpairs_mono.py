@@ -1,6 +1,6 @@
 # model settings
 test_seen_classes = False
-
+training_type = "Channel"
 model = dict(
     type='BHRL',
     pretrained=None,
@@ -120,7 +120,10 @@ model = dict(
             score_thr=0.05,
             nms=dict(type='nms', iou_threshold=0.5),
             max_per_img=100,
-            mask_thr_binary=0.5)))
+            mask_thr_binary=0.5))
+            ,
+            training_type=training_type
+            )
 
 # dataset settings
 dataset_type = 'OneShotVOCDataset'
@@ -161,7 +164,12 @@ test_pipeline = [
                                                           'flip', 'img_norm_cfg', 'label']),
         ])
 ]
+
+
 img_path = "/images"
+config_path = "/large/ttani_2/bhrl/configs/manga/BHRL_allpairs_mono.py"
+threshold = 0
+
 
 data = dict(
     samples_per_gpu=2,
@@ -169,21 +177,26 @@ data = dict(
     train=dict(
         type=dataset_type,
         ann_file=data_root + 'voc_annotation/pairs_before.json',
+        config_path = config_path,
         img_prefix=data_root+ img_path,
         pipeline=train_pipeline),
     val=dict(
         type=dataset_type,
         ann_file=data_root + 'voc_annotation/pairs_after.json',
         img_prefix=data_root+ img_path,
-        pipeline=test_pipeline),
+        pipeline=test_pipeline,
+        ),
     test=dict(
         type=dataset_type,
         ann_file=data_root + 'voc_annotation/pairs_after.json',
+        config_path = config_path,
+        threshold=threshold,
         img_prefix=data_root + img_path,
         pipeline=test_pipeline,
         test_seen_classes=test_seen_classes,
         position=0))
 evaluation = dict(interval=1, metric='bbox')
+
 # optimizer
 optimizer = dict(type='SGD', lr=0.02, momentum=0.9, weight_decay=0.0001)
 optimizer_config = dict(grad_clip=None)

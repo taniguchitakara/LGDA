@@ -1,32 +1,21 @@
-# Balanced and Hierarchical Relation Learning for One-shot Object Detection
+# Learning Gaussian Data Augmentation in Feature Space for One-shot Object Detection in Manga
+
 This repository is an official implementation of the CVPR 2022 paper "Balanced and Hierarchical Relation Learning for One-shot Object Detection", based on [mmdetection](https://github.com/open-mmlab/mmdetection).
-![BHRL](images/BHRL.png)
+![BHRL](images/architecture.png)
 
 ## Installation
 
-1. Create a conda virtual environment and activate it
+1. Create a docker virtual environment 
 
 ```shell
-conda create -n BHRL python=3.7 -y
-conda activate BHRL
+docker build docker_bhrl/. -t LGDA
+docker run -it --shm-size=1g --rm --gpus all -v "{your_folder}:{your_folder}"   --name LGDA  LGDA:latest  /bin/bash 
 ```
 
-2. Install PyTorch and torchvision 
+2. Install build requirements and then install MMDetection.
 
 ```shell
-conda install pytorch==1.7.1 torchvision==0.8.2 torchaudio==0.7.2 cudatoolkit=10.2 -c pytorch
-```
-
-3. Install mmcv
-
-```shell
-pip install mmcv-full==1.3.3 -f https://download.openmmlab.com/mmcv/dist/cu102/torch1.7.0/index.html
-```
-
-4. Install build requirements and then install MMDetection.
-
-```shell
-pip install -r requirements/build.txt
+cd {your_folder}
 pip install -v -e . 
 ```
 
@@ -74,7 +63,7 @@ BHRL
 # test seen classes
 ./tools/dist_test.sh configs/coco/split1/BHRL.py checkpoints/model_split1.pth 8 --out results.pkl --eval bbox --average 5 --test_seen_classes
 ```
-Download the pretrained models for inferencing from this [link](https://drive.google.com/drive/folders/1emTPlHRT2_z3Rrgo1ltbcGyVvr3ZEF_v?usp=sharing).
+
 
 ## Train a model
 ```shell
@@ -85,18 +74,26 @@ Download the pretrained models for inferencing from this [link](https://drive.go
 ```
 Note: we observe an obvious variation of the performance for different runs on the VOC dataset due to its small amount of data, and we are still investigating possible solutions to stabilize the results. Moreover, the variation of performance on unseen classes is normal because the model is not trained on unseen classes.
 
-## Contact 
-For any questions, please contact hanqing.yang@zju.edu.cn
 
 ## Citation
 If you find our work useful in your research, please consider citing:
 
 ```latex
-@InProceedings{BHRL,
-    author    = {Yang, Hanqing and Cai, Sijia and Sheng, Hualian and Deng, Bing and Huang, Jianqiang and Hua, Xiansheng and Tang, Yong and Zhang, Yu},
-    title     = {Balanced and Hierarchical Relation Learning for One-shot Object Detection},
-    booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
-    month     = {June},
-    year      = {2022}
+@inproceedings{10.1145/3696409.3700174,
+author = {Taniguchi, Takara and Furuta, Ryosuke},
+title = {Learning Gaussian Data Augmentation in Feature Space for One-shot Object Detection in Manga},
+year = {2024},
+isbn = {9798400712739},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3696409.3700174},
+doi = {10.1145/3696409.3700174},
+booktitle = {Proceedings of the 6th ACM International Conference on Multimedia in Asia},
+articleno = {14},
+numpages = {8},
+keywords = {One-shot object detection, Manga, Data augmentation},
+location = {
+},
+series = {MMAsia '24}
 }
 ```
