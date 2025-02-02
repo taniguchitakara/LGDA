@@ -1,6 +1,6 @@
 # Learning Gaussian Data Augmentation in Feature Space for One-shot Object Detection in Manga
 
-This repository is an official implementation of the CVPR 2022 paper "Balanced and Hierarchical Relation Learning for One-shot Object Detection", based on [mmdetection](https://github.com/open-mmlab/mmdetection).
+This repository is an official implementation of the MMAsia 2024 paper "Balanced and Hierarchical Relation Learning for One-shot Object Detection", based on [mmdetection](https://github.com/open-mmlab/mmdetection).
 ![BHRL](images/architecture.png)
 
 ## Installation
