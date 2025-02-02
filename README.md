@@ -72,8 +72,6 @@ BHRL
 # e.g.,
 ./tools/dist_train.sh configs/coco/split1/BHRL.py 8 --no-validate
 ```
-Note: we observe an obvious variation of the performance for different runs on the VOC dataset due to its small amount of data, and we are still investigating possible solutions to stabilize the results. Moreover, the variation of performance on unseen classes is normal because the model is not trained on unseen classes.
-
 
 ## Citation
 If you find our work useful in your research, please consider citing:
