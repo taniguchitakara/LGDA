@@ -1,1 +1,0 @@
-./tools/dist_train.sh configs/voc/BHRL.py 1 --no-validate

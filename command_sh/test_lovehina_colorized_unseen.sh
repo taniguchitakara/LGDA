@@ -1,1 +1,0 @@
-./tools/dist_test.sh configs/manga/BHRL_lovehina_colorized.py ./work_dirs/manga/BHRL_lovehina_trained_gaussian_fpn_min_2/epoch_50.pth 1 --out ./lovehina_be_visualized/lovehina_colorized_results_unseen.pkl --eval bbox 
