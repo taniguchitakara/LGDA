@@ -1,1 +1,0 @@
-./tools/dist_train.sh configs/manga/BHRL_salad_colorized.py 1 --no-validate

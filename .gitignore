@@ -128,4 +128,6 @@ data/
 *.csv
 *.pkl
 
+.gitignore
+
 
