@@ -49,9 +49,20 @@ BHRL
 
 # e.g.,
 # test unseen classes
-./tools/dist_test.sh configs/coco/split1/BHRL.py checkpoints/model_split1.pth 8 --out results.pkl --eval bbox --average 5
+./tools/dist_test.sh \
+/large/ttani_2/bhrl/configs/manga/BHRL_allpairs_mono.py \
+/large/ttani_2/bhrl/work_dirs/manga/allpairs/trained_tensor_gaussian/CH/epoch_30.pth \
+1 \
+--out ./work_dirs/channel.pkl \
+--eval bbox 
 # test seen classes
-./tools/dist_test.sh configs/coco/split1/BHRL.py checkpoints/model_split1.pth 8 --out results.pkl --eval bbox --average 5 --test_seen_classes
+./tools/dist_test.sh \
+/large/ttani_2/bhrl/configs/manga/BHRL_allpairs_mono.py \
+/large/ttani_2/bhrl/work_dirs/manga/allpairs/trained_tensor_gaussian/CH/epoch_30.pth \
+1 \
+--out ./work_dirs/channel.pkl \
+--eval bbox \
+--test_seen_classes
 ```
 
 
@@ -60,7 +71,8 @@ BHRL
 ./tools/dist_train.sh ${CONFIG} ${GPUS} --no-validate
 
 # e.g.,
-./tools/dist_train.sh configs/manga/BHRL_allpairs_mono.py 1 --no-validate```
+./tools/dist_train.sh configs/manga/BHRL_allpairs_mono.py 1 --no-validate
+```
 
 ## Parameter explained
 You can change parameters of training in ```./configs/manga/BHRL_allpairs_mono.py```. Below are two key parameters:
