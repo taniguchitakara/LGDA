@@ -15,7 +15,6 @@ docker run -it --shm-size=1g --rm --gpus all -v "{your_folder}:{your_folder}"   
 2. Install build requirements and then install MMDetection.
 
 ```shell
-cd {your_folder}
 pip install -v -e . 
 ```
 
