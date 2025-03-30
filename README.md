@@ -64,8 +64,19 @@ BHRL
 ```
 
 ## Parameter explained
-You can change parameters of training in ```/large/ttani_2/bhrl/configs/manga/BHRL_allpairs_mono.py```. For example ,```training_type = "Channel", threshold = 0```
+You can change parameters of training in ```./configs/manga/BHRL_allpairs_mono.py```. Below are two key parameters:
 
+- **`training_type`**: Specifies the type of training. For example, `"Channel"` indicates channel-based training. You can modify this parameter to experiment with different training strategies.
+  
+  ```
+  training_type = "Channel"
+  ```
+
+- **`threshold`**: Sets the confidence threshold for predictions. A value of `0` means no threshold is applied. You can adjust this to filter predictions based on confidence scores.
+
+  ```
+  threshold = 0
+  ```
 
 ## Citation
 If you find our work useful in your research, please consider citing:
