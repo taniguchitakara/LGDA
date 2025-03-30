@@ -60,8 +60,7 @@ BHRL
 ./tools/dist_train.sh ${CONFIG} ${GPUS} --no-validate
 
 # e.g.,
-./tools/dist_train.sh configs/coco/split1/BHRL.py 8 --no-validate
-```
+./tools/dist_train.sh configs/manga/BHRL_allpairs_mono.py 1 --no-validate```
 
 ## Parameter explained
 You can change parameters of training in ```./configs/manga/BHRL_allpairs_mono.py```. Below are two key parameters:
