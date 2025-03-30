@@ -128,3 +128,4 @@ data/
 *.csv
 *.pkl
 
+test_allpairs_mono_channel.sh
