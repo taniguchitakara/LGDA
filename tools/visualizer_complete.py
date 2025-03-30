@@ -6,7 +6,6 @@ from PIL import Image, ImageDraw, ImageFont
 def draw_bboxes(image_path, bboxes, output_path, font_size=15, bbox_thickness=2, score_threshold=0.5):
     image = Image.open(image_path)
     draw = ImageDraw.Draw(image)
-    font = ImageFont.truetype("/large/ttani_2/bhrl/lovehina_be_visualized/arial.ttf", font_size)
 
     for bbox in bboxes:
         x, y, w, h = bbox['bbox']
@@ -18,7 +17,7 @@ def draw_bboxes(image_path, bboxes, output_path, font_size=15, bbox_thickness=2,
             color = get_category_color(category_id)
 
             draw.rectangle([x, y, x + w, y + h], outline=color, width=bbox_thickness)
-            draw.text((x, y), f"Label: {category_id} Score: {score:.2f}", font=font, fill=color)
+            draw.text((x, y), f"Label: {category_id} Score: {score:.2f}", fill=color)
 
     image.save(output_path)
 
