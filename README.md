@@ -21,24 +21,15 @@ pip install -v -e .
 
 ## Datasets Preparation
 
-Download coco dataset and voc dataset from the official websites. 
-
-Download voc_annotation from this [link](https://drive.google.com/drive/folders/1czLhPw65ILmiGU8z95qHGkVTi0EdTGiJ?usp=sharing).
-
-Download ref_ann_file from this [link](https://drive.google.com/drive/folders/1GztcOl8ltCVv9YJdhuvFZq15LTwxWJ7M?usp=sharing).
+When you use Manga109 dataset, please request downloading from [this link](http://www.manga109.org/en/).
 
 We expect the directory structure to be the following:
 ```
-BHRL
+LGDA
 ├── data
-│   ├──coco
-│   │   ├── annotations
-│   │   ├── train2017
-│   │   ├── val2017
-│   ├──VOCdevkit
+│   ├──manga_dataset
 │   │   ├── voc_annotation
-│   │   ├── VOC2007
-│   │   ├── VOC2012
+│   │   ├── images
 ├── ref_ann_file
 ...
 ```

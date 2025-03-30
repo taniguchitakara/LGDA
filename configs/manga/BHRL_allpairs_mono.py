@@ -121,8 +121,7 @@ model = dict(
             nms=dict(type='nms', iou_threshold=0.5),
             max_per_img=100,
             mask_thr_binary=0.5))
-            ,
-            training_type=training_type
+            ,training_type=training_type
             )
 
 # dataset settings

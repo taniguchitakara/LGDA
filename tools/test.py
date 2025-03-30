@@ -406,7 +406,7 @@ def main():
                 else:
                     if not isinstance(outputs[0], dict):
                         result_files = results2json(dataset, outputs, img_ids, img_labels, args.out)
-                        output_csv="/large/ttani_2/bhrl/haipara0_1.csv"
+                        output_csv="./work_dirs/haipara0_1.csv"
                         coco_eval(result_files, eval_types, dataset.coco, img_ids=img_ids, img_labels=img_labels,output_csv=output_csv)
     
     with open(cfg.data.test.ann_file, "r") as f:

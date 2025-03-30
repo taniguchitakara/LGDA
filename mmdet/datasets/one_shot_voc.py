@@ -26,75 +26,8 @@ import os
 from PIL import Image
 
 import json
+from .utils import load_coco_categories, find_indexes, remove_elements, plot_histogram_from_dict, extract_category_ids_above_threshold, count_category_ids, crop_image
 
-def extract_category_ids_above_threshold(dictionary, threshold):
-    result = [key for key, value in dictionary.items() if value >= threshold]
-    return result
-
-def count_category_ids(coco_json_file):
-    with open(coco_json_file, 'r') as f:
-        data = json.load(f)
-
-    category_counts = {}
-
-    for annotation in data['annotations']:
-        category_id = annotation['category_id']
-        if category_id in category_counts:
-            category_counts[category_id] += 1
-        else:
-            category_counts[category_id] = 1
-
-    return category_counts
-
-def crop_image(annotation):
-    #print(annotation)
-    root = "/large/ttani_2/bhrl/data/manga_dataset/images/"
-    image_file = annotation['file_name']
-    image_category = annotation["ann"]["category_id"]
-    image = Image.open(root + image_file)
-
-    ann_data = annotation['ann']
-    bbox = ann_data['bbox']
-    cropped_image = image.crop((bbox[0], bbox[1], bbox[0] + bbox[2], bbox[1] + bbox[3]))
-    
-    output_folder = f"/large/ttani_2/bhrl/data/cropped_manga/{image_file}"
-    
-    os.makedirs(output_folder, exist_ok=True)  # フォルダが存在しない場合に作成する
-    cropped_image.save(f"{output_folder}/{image_category}.jpg")
-
-def load_coco_categories(annotation_file_path):
-    with open(annotation_file_path, 'r') as f:
-        data = json.load(f)
-    
-    categories = tuple(category['name'] for category in data['categories'])
-    
-    return categories
-
-def find_indexes(lst, arr):
-    indexes = []
-    for item in lst:
-        if item in arr:
-            indexes.append(arr.index(item))
-    return indexes
-
-def remove_elements(source_list, elements_to_remove):
-    return [item for item in source_list if item not in elements_to_remove]
-
-def plot_histogram_from_dict(dictionary, filename):
-    # 辞書を値で降順にソート
-    sorted_dict = dict(sorted(dictionary.items(), key=lambda item: item[1], reverse=True))
-
-    # ソートされた辞書からキーと値を取り出す
-    keys = range(len(sorted_dict))
-    values = sorted_dict.values()
-
-    # ヒストグラムを作成
-    plt.bar(keys,values)
-    plt.ylabel("Number of appearances")
-    plt.xlabel("Character (sorted by most)")
-
-    # ヒストグラムを画像として保存
-    plt.savefig(filename)
 
 # サンプルの辞書で関数をテスト
 
@@ -119,16 +52,20 @@ class OneShotVOCDataset(CustomDataset):
                  ):
         self.config_path =config_path
         cfg = mmcv.Config.fromfile(config_path)
+        cropped_images_path = cfg.data.train.img_prefix
+
         CLASSES = list(set(load_coco_categories(cfg.data.train.ann_file) +load_coco_categories(cfg.data.test.ann_file)))
         train_seen_classes_str = list(set(load_coco_categories(cfg.data.train.ann_file)))
         train_seen_classes= find_indexes(CLASSES,train_seen_classes_str)
         counts1 = count_category_ids(cfg.data.test.ann_file)
-        self.split = train_seen_classes
 
+
+        self.split = train_seen_classes
         self.test_seen_classes = test_seen_classes
         self.position = position
         self.selected_category_for_test = extract_category_ids_above_threshold(counts1,threshold)
         self.train_seen_classes = train_seen_classes
+        self.cropped_images_path = cropped_images_path
 
         classes = CLASSES 
         super(OneShotVOCDataset,
@@ -143,14 +80,12 @@ class OneShotVOCDataset(CustomDataset):
         self.img_ids = self.coco.get_img_ids()
         img_infos, img_cates = self.generate_infos()
         self.cates = img_cates
-        #print(self.cates)
         return img_infos
 
     def split_cats(self,train_seen_classes):
         self.train_cat =[]
         self.test_cat = []
 
-        #print(self.cat_ids)
         for i in range(len(self.cat_ids)):
             if i not in self.split and i in self.selected_category_for_test:
                 self.test_cat.append(self.cat_ids[i])
@@ -176,8 +111,6 @@ class OneShotVOCDataset(CustomDataset):
         info['filename'] = info['file_name']
         img_anns_ids = self.coco.get_ann_ids(img_ids=[i])
         img_anns = self.coco.load_anns(img_anns_ids)
-        #print("This is seen classes to train")
-        #print(img_anns)
         for img_ann in img_anns:
             if img_ann['category_id'] in self.train_cat:
                 img_infos.append(info)
@@ -186,10 +119,8 @@ class OneShotVOCDataset(CustomDataset):
 
     def generate_test(self, i, img_infos, img_cates):
         info = self.coco.loadImgs([i])[0]
-        #print(info)
         info['filename'] = info['file_name']
         img_anns_ids = self.coco.getAnnIds(imgIds=i)
-        #print(img_anns_ids)
         img_anns = self.coco.loadAnns(img_anns_ids)
         img_cats = list()
         for img_ann in img_anns:
@@ -201,7 +132,6 @@ class OneShotVOCDataset(CustomDataset):
                 img_cates.append(img_ann['category_id'])
             else:
                 continue
-        #print()
         return img_infos, img_cates
 
     def get_ann_info(self, idx, cate=None):
@@ -244,7 +174,6 @@ class OneShotVOCDataset(CustomDataset):
         while cate not in cates:
             index = np.random.randint(len(ann_info))
             cate = ann_info[index]['category_id']
-        #print(cate)
         return cate
 
     def _parse_ann_info(self, img_info, ann_info, cate_select):
@@ -312,52 +241,35 @@ class OneShotVOCDataset(CustomDataset):
                 rf_img_info['file_name'] = self.coco.loadImgs([rf_id])[0]['file_name']
                 break
         rf_img_info['img_info'] = self.coco.loadImgs([rf_id])[0]
-        #print(rf_img_info)
-        #print("this is train classes")
-        #print(rf_img_info)
-        crop_image(rf_img_info)
+        crop_image(rf_img_info, cropped_images_path=self.cropped_images_path)
         return rf_img_info
 
     def prepare_test_ref_img(self, idx, cate):
         rf_img_info = dict()
         img_id = self.data_infos[idx]['id']
-        #print(img_id)
         rf_ids = self.coco.getAnnIds(catIds=[cate], iscrowd=False)
-        
-        #print(rf_ids)
+
         
         random.seed(img_id)
         l = list(range(len(rf_ids)))
-        #print
-        #random.shuffle(l)
-        #print(l[0])
-        #print(l)
+
 
         position = l[(self.position) % len(l)]
 
-        #print(position)
-        #print(position)
-        #print(position)
         ref = rf_ids[position]
-        #print(rf_ids)
-        #print(ref)
-        #print(position)
 
         rf_anns = self.coco.loadAnns(ref)[0]
 
-        #print(rf_anns)
         rf_img_info['ann'] = rf_anns
         rf_img_info['file_name'] = self.coco.loadImgs(rf_anns['image_id'])[0]['file_name']
         rf_img_info['img_info'] = self.coco.loadImgs(rf_anns['image_id'])[0]
-        #print(rf_img_info)
-        crop_image(rf_img_info)
+        crop_image(rf_img_info,self.cropped_images_path)
         return rf_img_info
 
     def prepare_train_img(self, idx):
         img_info = self.data_infos[idx]
         ann_info = self.get_ann_info(idx)
         rf_img_info = self.prepare_train_ref_img(idx, ann_info['cate'])
-        #print(ann_info['cate'])
         results = dict(img_info=img_info,
                        ann_info=ann_info,
                        rf_img_info=rf_img_info)
@@ -369,22 +281,16 @@ class OneShotVOCDataset(CustomDataset):
     def prepare_test_img(self, idx):
         img_info = self.data_infos[idx]
         ann_info = self.get_ann_info(idx, self.cates[idx])
-        #print(idx)
      
         rf_img_info = self.prepare_test_ref_img(idx, self.cates[idx])
 
-        #print(ann_info["ann"]["category_id"])
-        #print(rf_img_info)
         results = dict(img_info=img_info,
                        ann_info=ann_info,
                        rf_img_info=rf_img_info,
                        label=self.cat2label[self.cates[idx]])
         if self.proposals is not None:
             results['proposals'] = self.proposals[idx]
-            #print(results["proposals"])
 
         self.pre_pipeline(results)
-        crop_image(rf_img_info)
-        #print(str(self.pre_pipeline(results)))
-        #print(rf_img_info)
+        crop_image(rf_img_info, self.cropped_images_path)
         return self.pipeline(results)

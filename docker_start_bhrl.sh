@@ -1,0 +1,1 @@
+docker run -it --shm-size=1g --rm --gpus all -v "/large/ttani_2:/large/ttani_2"   --name bhrl  bhrl:latest  /bin/bash 

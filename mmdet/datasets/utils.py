@@ -8,6 +8,79 @@ from mmdet.datasets.builder import PIPELINES
 from mmdet.datasets.pipelines import LoadAnnotations, LoadImageFromFile
 from mmdet.models.dense_heads import GARPNHead, RPNHead
 from mmdet.models.roi_heads.mask_heads import FusedSemanticHead
+import json
+import matplotlib.pyplot as plt
+from PIL import Image
+import os
+
+
+def extract_category_ids_above_threshold(dictionary, threshold):
+    result = [key for key, value in dictionary.items() if value >= threshold]
+    return result
+
+def count_category_ids(coco_json_file):
+    with open(coco_json_file, 'r') as f:
+        data = json.load(f)
+
+    category_counts = {}
+
+    for annotation in data['annotations']:
+        category_id = annotation['category_id']
+        if category_id in category_counts:
+            category_counts[category_id] += 1
+        else:
+            category_counts[category_id] = 1
+
+    return category_counts
+
+def crop_image(annotation, cropped_images_path):
+    root = cropped_images_path
+    image_file = annotation['file_name']
+    image_category = annotation["ann"]["category_id"] 
+    image = Image.open(os.path.join(root, image_file))
+
+    ann_data = annotation['ann']
+    bbox = ann_data['bbox']
+    cropped_image = image.crop((bbox[0], bbox[1], bbox[0] + bbox[2], bbox[1] + bbox[3]))
+    
+    output_folder = f"../../data/cropped_manga/{image_file}"
+    
+    os.makedirs(output_folder, exist_ok=True)  # フォルダが存在しない場合に作成する
+    cropped_image.save(f"{output_folder}/{image_category}.jpg")
+
+def load_coco_categories(annotation_file_path):
+    with open(annotation_file_path, 'r') as f:
+        data = json.load(f)
+    
+    categories = tuple(category['name'] for category in data['categories'])
+    
+    return categories
+
+def find_indexes(lst, arr):
+    indexes = []
+    for item in lst:
+        if item in arr:
+            indexes.append(arr.index(item))
+    return indexes
+
+def remove_elements(source_list, elements_to_remove):
+    return [item for item in source_list if item not in elements_to_remove]
+
+def plot_histogram_from_dict(dictionary, filename):
+    # 辞書を値で降順にソート
+    sorted_dict = dict(sorted(dictionary.items(), key=lambda item: item[1], reverse=True))
+
+    # ソートされた辞書からキーと値を取り出す
+    keys = range(len(sorted_dict))
+    values = sorted_dict.values()
+
+    # ヒストグラムを作成
+    plt.bar(keys,values)
+    plt.ylabel("Number of appearances")
+    plt.xlabel("Character (sorted by most)")
+
+    # ヒストグラムを画像として保存
+    plt.savefig(filename)
 
 
 def replace_ImageToTensor(pipelines):
