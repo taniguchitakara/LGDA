@@ -166,7 +166,7 @@ test_pipeline = [
 
 
 img_path = "/images"
-config_path = "/large/ttani_2/bhrl/configs/manga/BHRL_allpairs_mono.py"
+config_path = "./configs/manga/BHRL_allpairs_mono.py"
 threshold = 0
 
 

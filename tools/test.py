@@ -31,7 +31,6 @@ import hashlib
 def draw_bboxes(image_path, bboxes, output_path, font_size=15, bbox_thickness=10, score_threshold=0.5):
     image = Image.open(image_path)
     draw = ImageDraw.Draw(image)
-    font = ImageFont.truetype("/large/ttani_2/bhrl/lovehina_be_visualized/arial.ttf", font_size)
 
     for bbox in bboxes:
         x, y, w, h = bbox['bbox']
