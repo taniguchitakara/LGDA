@@ -72,7 +72,7 @@ You can change parameters of training in ```./configs/manga/BHRL_allpairs_mono.p
   training_type = "Channel"
   ```
 
-- **`threshold`**: Sets the confidence threshold for predictions. A value of `0` means no threshold is applied. You can adjust this to filter predictions based on confidence scores.
+- **`threshold`**: Sets the number of classes used for predictions. 
 
   ```
   threshold = 0
