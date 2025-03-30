@@ -43,7 +43,7 @@ def crop_image(annotation, cropped_images_path):
     bbox = ann_data['bbox']
     cropped_image = image.crop((bbox[0], bbox[1], bbox[0] + bbox[2], bbox[1] + bbox[3]))
     
-    output_folder = f"./data/cropped_manga/{image_file}"
+    output_folder = f"./work_dirs/cropped_manga/{image_file}"
     
     os.makedirs(output_folder, exist_ok=True)  # フォルダが存在しない場合に作成する
     cropped_image.save(f"{output_folder}/{image_category}.jpg")
