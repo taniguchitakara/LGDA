@@ -17,7 +17,7 @@ from .custom import CustomDataset
 import copy
 import pickle
 import random
-file_path = "/large/ttani_2/bhrl/aiueo.txt"
+file_path = "./aiueo.txt"
 @DATASETS.register_module()
 class OneShotCocoDataset(CustomDataset):
 
