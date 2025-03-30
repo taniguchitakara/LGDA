@@ -206,7 +206,7 @@ lr_config = dict(
     warmup_iters=5000,
     warmup_ratio=0.001,
     step=[6])
-runner = dict(type='EpochBasedRunner', max_epochs=30)
+runner = dict(type='EpochBasedRunner', max_epochs=1)
 checkpoint_config = dict(interval=1)
 # yapf:disable
 log_config = dict(
@@ -220,7 +220,7 @@ log_config = dict(
 
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
-work_dir = 'work_dirs/manga/allpairs/trained_gaussian_tensor/scalar'
+work_dir = 'work_dirs/manga/allpairs/trained_gaussian_tensor/channel'
 load_from = 'resnet_model/res50_loadfrom.pth'
 resume_from = None
 workflow = [('train', 1)]

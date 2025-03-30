@@ -35,8 +35,6 @@ from .utils import load_coco_categories, find_indexes, remove_elements, plot_his
 @DATASETS.register_module()
 class OneShotVOCDataset(CustomDataset):
 
-
-
     def __init__(self,
                  ann_file,
                  pipeline,

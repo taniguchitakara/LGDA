@@ -8,7 +8,7 @@ This repository is an official implementation of the MMAsia 2024 paper "Learning
 1. Create a docker virtual environment 
 
 ```shell
-docker build docker_bhrl/. -t LGDA
+docker build docker_bhrl/. -t lgda
 docker run -it --shm-size=1g --rm --gpus all -v "{your_folder}:{your_folder}"   --name LGDA  LGDA:latest  /bin/bash 
 ```
 
