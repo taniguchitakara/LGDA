@@ -290,5 +290,4 @@ class OneShotVOCDataset(CustomDataset):
             results['proposals'] = self.proposals[idx]
 
         self.pre_pipeline(results)
-        crop_image(rf_img_info, self.cropped_images_path)
         return self.pipeline(results)
