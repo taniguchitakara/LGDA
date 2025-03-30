@@ -9,7 +9,7 @@ This repository is an official implementation of the MMAsia 2024 paper "Learning
 
 ```shell
 docker build docker_bhrl/. -t lgda
-docker run -it --shm-size=1g --rm --gpus all -v "{your_folder}:{your_folder}"   --name LGDA  LGDA:latest  /bin/bash 
+docker run -it --shm-size=1g --rm --gpus all -v "{your_folder}:{your_folder}"   --name lgda  lgda:latest  /bin/bash 
 ```
 
 2. Install build requirements and then install MMDetection.
