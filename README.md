@@ -2,6 +2,7 @@
 
 This repository is an official implementation of the MMAsia 2024 paper "Learning Gaussian Data Augmentation in Feature Space for One-shot Object Detection in Manga", based on [mmdetection](https://github.com/open-mmlab/mmdetection).
 ![BHRL](images/architecture.png)
+![BHRL](images/Oneshot.png)
 
 ## Installation
 
@@ -91,6 +92,8 @@ You can change parameters of training in ```./configs/manga/BHRL_allpairs_mono.p
   ```
 
 ## Citation
+Paper link: [arXiv](https://arxiv.org/abs/2410.05935), [ACM](https://dl.acm.org/doi/10.1145/3696409.3700174)
+
 If you find our work useful in your research, please consider citing:
 
 ```latex
