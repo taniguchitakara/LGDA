@@ -1,6 +1,6 @@
 # Learning Gaussian Data Augmentation in Feature Space for One-shot Object Detection in Manga
 
-<img width="632" alt="Oneshot" src="https://github.com/user-attachments/assets/9c286de1-abeb-4d09-b77d-8935886c4e8f" />
+<img width="800" alt="Oneshot" src="https://github.com/user-attachments/assets/9c286de1-abeb-4d09-b77d-8935886c4e8f" />
 
 
 This repository is an official implementation of the MMAsia 2024 paper "Learning Gaussian Data Augmentation in Feature Space for One-shot Object Detection in Manga", based on [mmdetection](https://github.com/open-mmlab/mmdetection).
